@@ -1,0 +1,12 @@
+# Only ship the compiled output — source is on GitHub.
+node_modules/
+nodes/
+credentials/
+*.ts
+!dist/**/*.d.ts
+tsconfig.json
+gulpfile.js
+.gitignore
+.npmignore
+*.log
+.DS_Store

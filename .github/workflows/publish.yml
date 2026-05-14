@@ -1,0 +1,91 @@
+# Publishes the n8n community node (`n8n-nodes-android-texter`) to npm
+# with a provenance attestation.
+#
+# n8n's verified-community-node program requires (as of May 2026) that
+# packages are published from GitHub Actions with a signed provenance
+# statement that ties the npm artifact back to a specific commit in this
+# repo. Manual `npm publish` from a developer machine doesn't produce
+# that attestation, so the Creator Portal rejects unprovenanced versions.
+#
+# Trigger: push a git tag named `v<version>` (e.g. `v0.1.2`). The job
+# verifies the tag matches package.json's version, builds, then publishes.
+# The `--provenance` flag is set by `publishConfig.provenance` in
+# package.json, so we just call `npm publish` here.
+#
+# Required secret: NPM_TOKEN — a granular access token scoped to the
+# `n8n-nodes-android-texter` package with read+write. Generated at
+# https://www.npmjs.com/settings/<username>/tokens and stored in this
+# repo's Settings → Secrets → Actions.
+#
+# OIDC permission (`id-token: write`) is required so npm can verify the
+# action ran inside GitHub's trusted environment before issuing the
+# provenance attestation.
+
+name: Publish n8n community node
+
+on:
+  push:
+    tags:
+      - 'v*'
+  # Manual trigger so we can publish without a tag if something goes sideways.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (must match package.json)'
+        required: true
+        type: string
+
+permissions:
+  id-token: write   # required for OIDC → npm provenance
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Verify tag matches package version
+        if: github.event_name == 'push'
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          echo "Tag version:     $TAG_VERSION"
+          echo "Package version: $PKG_VERSION"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+
+      - name: Verify dispatch input matches package version
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          INPUT_VERSION="${{ github.event.inputs.version }}"
+          if [ "$INPUT_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Input version $INPUT_VERSION does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # Confirms what would be published. Useful in CI logs for debugging
+      # without consuming an npm publish slot.
+      - name: Pack (dry run)
+        run: npm pack --dry-run
+
+      - name: Publish to npm with provenance
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,0 +1,64 @@
+{
+  "name": "n8n-nodes-android-texter",
+  "version": "0.1.2",
+  "description": "n8n community node for Android Texter — send and receive SMS through your linked Android device, plus contacts, spam flagging, and message history.",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "sms",
+    "mms",
+    "android",
+    "androidtexter",
+    "twilio-alternative"
+  ],
+  "license": "MIT",
+  "homepage": "https://androidtexter.com",
+  "author": {
+    "name": "Android Texter",
+    "email": "support@androidtexter.com",
+    "url": "https://androidtexter.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/argosautomation/n8n-nodes-android-texter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/argosautomation/n8n-nodes-android-texter/issues"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "lint": "eslint nodes credentials package.json",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/AndroidTexterApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/AndroidTexter/AndroidTexter.node.js",
+      "dist/nodes/AndroidTexterTrigger/AndroidTexterTrigger.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint-plugin-n8n-nodes-base": "^1.16.0",
+    "gulp": "^4.0.2",
+    "n8n-workflow": "^1.50.0",
+    "typescript": "^5.3.0"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}
