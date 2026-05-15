@@ -151,7 +151,7 @@ export class AndroidTexter implements INodeType {
 				default: '',
 				required: true,
 				displayOptions: { show: { resource: ['message'], operation: ['getStatus'] } },
-				description: 'ID returned by a previous Send Message call.',
+				description: 'ID returned by a previous Send Message call',
 			},
 
 			// ─── Message: Get History ──────────────────────────────────────
@@ -163,7 +163,7 @@ export class AndroidTexter implements INodeType {
 				required: true,
 				placeholder: '+15551234567',
 				displayOptions: { show: { resource: ['message'], operation: ['getHistory'] } },
-				description: 'The other party in the conversation.',
+				description: 'The other party in the conversation',
 			},
 			{
 				displayName: 'Page',
@@ -176,8 +176,9 @@ export class AndroidTexter implements INodeType {
 				displayName: 'Limit',
 				name: 'limit',
 				type: 'number',
+				description: 'Max number of results to return',
 				default: 50,
-				typeOptions: { minValue: 1, maxValue: 100 },
+				typeOptions: { minValue: 1 },
 				displayOptions: { show: { resource: ['message'], operation: ['getHistory'] } },
 			},
 
@@ -237,7 +238,7 @@ export class AndroidTexter implements INodeType {
 				type: 'string',
 				default: '',
 				placeholder: 'lead,vip',
-				description: 'Comma-separated tags to attach to this contact.',
+				description: 'Comma-separated tags to attach to this contact',
 				displayOptions: { show: { resource: ['contact'], operation: ['create'] } },
 			},
 
@@ -258,7 +259,7 @@ export class AndroidTexter implements INodeType {
 					{
 						name: 'Unflag',
 						value: 'unflag',
-						action: 'Unflag a phone (remove from spam)',
+						action: 'Unflag a phone remove from spam',
 					},
 				],
 				default: 'flag',

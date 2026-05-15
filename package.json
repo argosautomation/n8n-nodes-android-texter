@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-android-texter",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "n8n community node for Android Texter — send and receive SMS through your linked Android device, plus contacts, spam flagging, and message history.",
   "keywords": [
     "n8n-community-node-package",
@@ -53,6 +53,7 @@
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.1",
     "eslint-plugin-n8n-nodes-base": "^1.16.0",
     "gulp": "^4.0.2",
     "n8n-workflow": "^1.50.0",
