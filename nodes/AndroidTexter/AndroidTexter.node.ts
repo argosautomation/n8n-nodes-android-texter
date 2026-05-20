@@ -5,6 +5,8 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	JsonObject,
+	NodeApiError,
 	NodeOperationError,
 } from 'n8n-workflow';
 
@@ -363,14 +365,33 @@ export class AndroidTexter implements INodeType {
 
 				returnData.push({ json: response, pairedItem: { item: i } });
 			} catch (error) {
+				// Wrap upstream HTTP / API errors in NodeApiError so the n8n
+				// UI can surface the status code, response body, and headers
+				// from the Android Texter API rather than just a string
+				// `.message`. NodeOperationError (the only other thing thrown
+				// above — for unsupported resource/operation combos) is left
+				// alone so its richer context isn't downgraded.
 				if (this.continueOnFail()) {
-					returnData.push({
-						json: { error: (error as Error).message },
-						pairedItem: { item: i },
-					});
+					if (error instanceof NodeOperationError) {
+						returnData.push({
+							json: { error: error.message },
+							pairedItem: { item: i },
+						});
+					} else {
+						const wrapped = new NodeApiError(this.getNode(), error as JsonObject, {
+							itemIndex: i,
+						});
+						returnData.push({
+							json: { error: wrapped.message },
+							pairedItem: { item: i },
+						});
+					}
 					continue;
 				}
-				throw error;
+				if (error instanceof NodeOperationError) {
+					throw error;
+				}
+				throw new NodeApiError(this.getNode(), error as JsonObject, { itemIndex: i });
 			}
 		}
 
