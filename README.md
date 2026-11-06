@@ -37,11 +37,11 @@ An API key sent as the `X-API-Key` header. No OAuth. The credential test calls `
 - **Send Broadcast.** Phones (commas or new lines, up to 500) and Message. Each recipient gets a separate text. Options: Device ID (send all from one phone), Media URL.
 - **Get Status.** Message ID from a previous Send. Status is `queued`, `sent`, `failed` or `cancelled`.
 - **Get History.** One conversation, newest first: Phone, Page, Limit. For a group text, add the Thread Ref from List Conversations.
-- **Search.** Sent and received texts containing a word or phrase. One item per message.
+- **Search.** Sent and received texts containing a word or phrase. Return All, or set a Limit. One item per message.
 
 ### Conversation
 
-- **List.** Conversations by folder: All (everything except archived and spam), Inbox, Outbox, Archived, Spam. One item per conversation.
+- **List.** Most recent first, up to Limit. Optional Folder filter: All (the default, everything except archived and spam), Inbox, Outbox, Archived, Spam. One item per conversation.
 
 ### Scheduled Message
 
@@ -51,7 +51,7 @@ An API key sent as the `X-API-Key` header. No OAuth. The credential test calls `
 ### Contact
 
 - **Create or Update.** Matched by phone. Fields you leave empty are kept, and tags are added rather than replaced.
-- **List.** Optional search (name, phone, email, company) and tag filter. One item per contact.
+- **List.** Return All, or set a Limit. Optional search (name, phone, email, company) and tag filter. One item per contact.
 
 ### Device
 
@@ -71,6 +71,7 @@ Every API endpoint is documented at [androidtexter.com/docs](https://androidtext
 
 ## Changelog
 
+- **0.2.1.** Contact List and Search can return every result (Return All) instead of stopping at the first page; Conversation List's Folder moved under Filters.
 - **0.2.0.** Send Broadcast, Search, List Conversations, Scheduled Messages, List Contacts, SIM slot and group thread support; usable as an AI Agent tool; meets n8n's current community-node checks. Existing operations are unchanged.
 - **0.1.4.** API errors shown through n8n's error display.
 
