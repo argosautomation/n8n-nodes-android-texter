@@ -1,97 +1,85 @@
 # n8n-nodes-android-texter
 
-n8n community node for [Android Texter](https://androidtexter.com) — send and receive SMS / MMS through your own linked Android phone, without paying Twilio per-message fees.
+n8n community node for [Android Texter](https://androidtexter.com): send and receive SMS and MMS through your own Android phone and number. No Twilio account, no 10DLC registration, no per-message fees.
 
 ## What it does
 
 | Node | Operations |
 |---|---|
-| **Android Texter** | Send SMS/MMS · Get Message Status · Get Conversation History · List Devices · Create Contact · Flag/Unflag Spam |
-| **Android Texter Trigger** | Polls every minute for new inbound SMS, starts your workflow when one arrives |
+| **Android Texter** | Send SMS/MMS, Send Broadcast, Get Message Status, Get Conversation History, Search Messages, List Conversations, List or Cancel Scheduled Messages, Create or Update Contact, List Contacts, List Devices, Flag or Unflag Spam |
+| **Android Texter Trigger** | Polls for new incoming texts and starts your workflow when one arrives |
+
+The Android Texter node can also be used as a tool by n8n's AI Agent.
 
 ## Quick start
 
-1. **Install the node** in n8n: Settings → Community Nodes → Install → `n8n-nodes-android-texter`
-2. **Generate an API key** at [androidtexter.com/dashboard/settings/api-keys](https://androidtexter.com/dashboard/settings/api-keys) (starts with `atx_`)
-3. **Create a credential** in n8n: Credentials → New → Android Texter API → paste your key
-4. **Drop the node** onto your canvas — the credential test should pass green
+1. **Install the node** in n8n: Settings, Community Nodes, Install, then enter `n8n-nodes-android-texter`.
+2. **Pair a phone** and **create an API key** at [androidtexter.com/dashboard/settings/api-keys](https://androidtexter.com/dashboard/settings/api-keys). Keys start with `atx_`.
+3. **Create a credential** in n8n: Credentials, New, Android Texter API, then paste your key. The credential test checks it.
+4. **Add the node** to your workflow.
 
 ## Use cases
 
-- **Lead capture → SMS reply.** Webhook from your form → AT trigger fires → branch on body → reply.
-- **Order confirmation.** New Shopify order → send a personalized confirmation SMS from your business phone.
-- **Two-way support.** New inbound SMS → ChatGPT for a draft reply → human approves → AT sends.
-- **Group blast.** Spreadsheet of phones → loop → send. (Use the HTTP Request node with `/api/messages/broadcast` if you need the bulk endpoint specifically.)
+- **Lead capture to text reply.** A form submission arrives, the node texts the lead from your business number.
+- **Order confirmations.** A new order triggers a personalized text from your phone.
+- **Two-way support.** A new incoming text starts the Trigger, an AI step drafts a reply, a person approves, the node sends it.
+- **Reminders to a group.** Send Broadcast texts a list of numbers, each as its own message, with `{{first_name}}` filled in per contact.
 
 ## Authentication
 
-Bearer-style API key, sent as `X-API-Key`. No OAuth flow.
+An API key sent as the `X-API-Key` header. No OAuth. The credential test calls `GET /api/me`.
 
-```
-X-API-Key: atx_abc123...
-```
+## Operations
 
-The credential test hits `GET /api/me` — the cheapest authenticated round-trip — and shows the green check on success.
+### Message
 
-## Operations reference
+- **Send.** To Phone (separate several numbers with commas for one group text), Message (up to 1600 characters). Options: Device ID, Media URL (makes it an MMS), Scheduled At, SIM Slot (dual-SIM phones). Returns the queued message, including `message_id`.
+- **Send Broadcast.** Phones (commas or new lines, up to 500) and Message. Each recipient gets a separate text. Options: Device ID (send all from one phone), Media URL.
+- **Get Status.** Message ID from a previous Send. Status is `queued`, `sent`, `failed` or `cancelled`.
+- **Get History.** One conversation, newest first: Phone, Page, Limit. For a group text, add the Thread Ref from List Conversations.
+- **Search.** Sent and received texts containing a word or phrase. One item per message.
 
-### Message → Send
+### Conversation
 
-Inputs:
-- **To Phone** (required) — recipient. Any format; the server normalizes (`+15551234567`, `5551234567`, `(555) 123-4567` all work).
-- **Message** (required) — body, up to 1600 chars.
-- **Additional Options:**
-  - **Device ID** — pick a specific phone if you have multiple linked. Default: first online device.
-  - **Media URL** — public HTTPS URL to an image/video. Including this makes the message an MMS.
-  - **Scheduled At** — ISO 8601 datetime; queue the send for later instead of immediately.
+- **List.** Conversations by folder: All (everything except archived and spam), Inbox, Outbox, Archived, Spam. One item per conversation.
 
-Returns: `{ status: 200, message_id, device_id, device_name, phone_number, message }`.
+### Scheduled Message
 
-### Message → Get Status
+- **List.** Texts waiting to be sent. One item per message.
+- **Cancel.** Stop a scheduled text by its message ID.
 
-Inputs: **Message ID** (from a previous Send).
+### Contact
 
-Returns: `{ id, status: "queued" | "sent" | "delivered" | "failed", phone }`.
+- **Create or Update.** Matched by phone. Fields you leave empty are kept, and tags are added rather than replaced.
+- **List.** Optional search (name, phone, email, company) and tag filter. One item per contact.
 
-### Message → Get History
+### Device
 
-Paginated history with one phone. Inputs: **Phone**, **Page**, **Limit** (1–100). Newest-first.
+- **List.** Your paired phones with online status and last check-in.
 
-### Device → List
+### Spam
 
-Lists every Android device linked to your account, including online/offline status and last-seen timestamp.
+- **Flag / Unflag.** Moves a conversation to Spam and mutes it, or brings it back.
 
-### Contact → Create
+## Trigger
 
-Upserts by phone (existing contacts get updated, not duplicated). Inputs: **Phone**, **Name**, **Tags** (comma-separated).
+**Android Texter Trigger** polls `GET /api/messages/received` on n8n's polling schedule (set it under Poll Times). Each new incoming text is one item. It remembers the newest message it has seen, so turning a workflow off and on does not replay old texts. **Filter by Phone** limits it to one sender.
 
-### Spam → Flag / Unflag
+## Anything else
 
-Flag a phone as spam. Hides the thread from the inbox and suppresses notifications. If your account has live-mode enabled, this also kicks off the AI evidence-collection agent.
+Every API endpoint is documented at [androidtexter.com/docs](https://androidtexter.com/docs), with the OpenAPI spec at `https://androidtexter.com/api/openapi.json`. Use n8n's HTTP Request node with the same `X-API-Key` header for anything this node does not cover.
 
-## Trigger reference
+## Changelog
 
-**Android Texter Trigger** polls `GET /api/messages/received` once per minute (default n8n polling cadence; configurable in the workflow's "Polling Times" setting). Each new inbound message becomes one execution item.
-
-State is per-workflow: the trigger remembers the most recent `created_at` it's seen and only emits messages newer than that, so reactivating a workflow doesn't replay history.
-
-- **Filter by Phone** — limit triggers to a specific number. Leave blank for all inbound.
-
-## Need an endpoint that isn't here?
-
-Use n8n's built-in **HTTP Request** node pointed at our OpenAPI spec:
-
-- Spec: https://androidtexter.com/api/openapi.json
-- Interactive docs: https://androidtexter.com/api/swagger/index.html
-- Hand-written docs: https://androidtexter.com/dashboard/docs
-
-Auth header is the same: `X-API-Key: atx_...`.
+- **0.2.0.** Send Broadcast, Search, List Conversations, Scheduled Messages, List Contacts, SIM slot and group thread support; usable as an AI Agent tool; meets n8n's current community-node checks. Existing operations are unchanged.
+- **0.1.4.** API errors shown through n8n's error display.
 
 ## License
 
-[MIT](./LICENSE) — fork it, modify it, redistribute it.
+[MIT](./LICENSE)
 
 ## Support
 
-- Issues: https://github.com/argosautomation/android-texter/issues
+- Issues: https://github.com/argosautomation/n8n-nodes-android-texter/issues
+- Email: support@androidtexter.com
 - Web: https://androidtexter.com

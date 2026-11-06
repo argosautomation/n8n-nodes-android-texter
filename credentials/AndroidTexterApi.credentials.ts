@@ -2,6 +2,7 @@ import {
 	IAuthenticateGeneric,
 	ICredentialTestRequest,
 	ICredentialType,
+	Icon,
 	INodeProperties,
 } from 'n8n-workflow';
 
@@ -10,17 +11,19 @@ import {
  *
  * Users generate a long-lived key on https://androidtexter.com/dashboard/settings/api-keys
  * (prefix `atx_` or `at_`) and paste it here. The server accepts the key on
- * any of the `flexible` and `/api/v1` routes via the `X-API-Key` header — the
+ * any of the `flexible` and `/api/v1` routes via the `X-API-Key` header, the
  * same scheme our docs and Postman collection use.
  *
  * The credential-test request hits `GET /api/me`, which is the cheapest
- * authenticated round-trip — returns the user's profile, subscription tier,
+ * authenticated round-trip, returns the user's profile, subscription tier,
  * and today's usage. Anything other than 200 fails the test cleanly.
  */
 export class AndroidTexterApi implements ICredentialType {
 	name = 'androidTexterApi';
 	displayName = 'Android Texter API';
-	documentationUrl = 'https://androidtexter.com/dashboard/docs';
+	documentationUrl = 'https://androidtexter.com/docs';
+
+	icon: Icon = { light: 'file:androidTexter.svg', dark: 'file:androidTexter.dark.svg' };
 
 	properties: INodeProperties[] = [
 		{
@@ -39,7 +42,7 @@ export class AndroidTexterApi implements ICredentialType {
 			type: 'string',
 			default: 'https://androidtexter.com',
 			description:
-				'Leave as the default unless you are running a self-hosted Android Texter instance.',
+				'Leave as the default. Only change it if Android Texter support asks you to.',
 		},
 	];
 

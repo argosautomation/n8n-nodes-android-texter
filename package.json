@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-android-texter",
-  "version": "0.1.4",
-  "description": "n8n community node for Android Texter — send and receive SMS through your linked Android device, plus contacts, spam flagging, and message history.",
+  "version": "0.2.0",
+  "description": "n8n community node for Android Texter: send and receive SMS and MMS from your own Android phone and number, plus broadcasts, conversations, scheduled messages, contacts and spam.",
   "keywords": [
     "n8n-community-node-package",
     "n8n",
@@ -12,7 +12,7 @@
     "twilio-alternative"
   ],
   "license": "MIT",
-  "homepage": "https://androidtexter.com",
+  "homepage": "https://androidtexter.com/docs",
   "author": {
     "name": "Android Texter",
     "email": "support@androidtexter.com",
