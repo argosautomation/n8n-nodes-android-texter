@@ -1,4 +1,4 @@
-# Only ship the compiled output — source is on GitHub.
+# Only ship the compiled output, source is on GitHub.
 node_modules/
 nodes/
 credentials/

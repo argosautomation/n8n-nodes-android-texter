@@ -12,7 +12,7 @@
 # The `--provenance` flag is set by `publishConfig.provenance` in
 # package.json, so we just call `npm publish` here.
 #
-# Required secret: NPM_TOKEN — a granular access token scoped to the
+# Required secret: NPM_TOKEN, a granular access token scoped to the
 # `n8n-nodes-android-texter` package with read+write. Generated at
 # https://www.npmjs.com/settings/<username>/tokens and stored in this
 # repo's Settings → Secrets → Actions.
@@ -77,7 +77,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Run the n8n-nodes-base lint ruleset — the same checks n8n's
+      # Run the n8n-nodes-base lint ruleset, the same checks n8n's
       # verification pipeline runs. Fail fast here rather than ship a
       # version that gets auto-rejected by the Creator Portal.
       - name: Lint

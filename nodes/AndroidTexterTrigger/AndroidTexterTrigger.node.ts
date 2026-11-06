@@ -4,13 +4,14 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	NodeConnectionTypes,
 } from 'n8n-workflow';
 
 /**
  * Polling trigger: emits one item per new inbound message since the last poll.
  *
  * Why polling (not webhooks) for v0.1.0:
- *   - Polling Just Works™ on the user's first install — no extra deploy, no
+ *   - Polling Just Works™ on the user's first install, no extra deploy, no
  *     n8n public URL configuration, no webhook registration round-trip with
  *     the server.
  *   - Webhooks need an `activate` lifecycle that creates a subscription on
@@ -20,13 +21,13 @@ import {
  * State: we use `this.getWorkflowStaticData('node')` to remember the latest
  * `created_at` timestamp we've seen, so each poll only emits messages that
  * are strictly newer than the last batch. On first run we seed it to "now"
- * — the trigger does not back-fill history, only forward.
+ *, the trigger does not back-fill history, only forward.
  */
 export class AndroidTexterTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Android Texter Trigger',
 		name: 'androidTexterTrigger',
-		icon: 'file:androidTexter.svg',
+		icon: { light: 'file:androidTexter.svg', dark: 'file:androidTexter.dark.svg' },
 		group: ['trigger'],
 		version: 1,
 		subtitle: 'New SMS received',
@@ -36,7 +37,7 @@ export class AndroidTexterTrigger implements INodeType {
 		},
 		polling: true,
 		inputs: [],
-		outputs: ['main'],
+		outputs: [NodeConnectionTypes.Main],
 		credentials: [
 			{
 				name: 'androidTexterApi',
@@ -67,7 +68,7 @@ export class AndroidTexterTrigger implements INodeType {
 		//
 		//   - manual: return a sample of recent messages so the user can see
 		//             the event shape on the canvas and wire downstream nodes.
-		//             Do NOT seed the high-water mark — repeated tests should
+		//             Do NOT seed the high-water mark, repeated tests should
 		//             show the same data, and a real activation shouldn't
 		//             skip messages that were shown as test samples.
 		//
@@ -103,7 +104,7 @@ export class AndroidTexterTrigger implements INodeType {
 
 		const staticData = this.getWorkflowStaticData('node') as { lastTs?: string };
 
-		// First activated run — seed the high-water mark so we only emit
+		// First activated run, seed the high-water mark so we only emit
 		// messages that arrive AFTER the trigger was turned on.
 		if (!staticData.lastTs) {
 			staticData.lastTs = (messages[0]?.created_at as string | undefined) ?? new Date().toISOString();
