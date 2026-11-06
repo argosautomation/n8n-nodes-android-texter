@@ -12,10 +12,9 @@
 # The `--provenance` flag is set by `publishConfig.provenance` in
 # package.json, so we just call `npm publish` here.
 #
-# Required secret: NPM_TOKEN, a granular access token scoped to the
-# `n8n-nodes-android-texter` package with read+write. Generated at
-# https://www.npmjs.com/settings/<username>/tokens and stored in this
-# repo's Settings → Secrets → Actions.
+# Auth: npm trusted publishing, no secret. On npmjs.com the package's
+# Settings, Trusted Publisher names GitHub Actions, repository
+# argosautomation/n8n-nodes-android-texter and workflow publish.yml.
 #
 # OIDC permission (`id-token: write`) is required so npm can verify the
 # action ran inside GitHub's trusted environment before issuing the
@@ -49,8 +48,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing needs npm 11.5.1 or newer.
+      - name: Update npm
+        run: npm install -g npm@latest
 
       - name: Verify tag matches package version
         if: github.event_name == 'push'
@@ -91,7 +94,10 @@ jobs:
       - name: Pack (dry run)
         run: npm pack --dry-run
 
+      # Trusted publishing: npm checks this workflow's GitHub OIDC identity
+      # against the trusted publisher configured on the package's npm
+      # settings page, so there is no token to expire. The NPM_TOKEN secret
+      # this used to read had expired by v0.2.0 (npm answered the publish
+      # with a 404).
       - name: Publish to npm with provenance
         run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
