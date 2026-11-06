@@ -277,13 +277,23 @@ export class AndroidTexter implements INodeType {
 				displayOptions: { show: { resource: ['message'], operation: ['search'] } },
 			},
 			{
+				displayName: 'Return All',
+				name: 'searchReturnAll',
+				type: 'boolean',
+				default: false,
+				description: 'Whether to return all results or only up to a given limit',
+				displayOptions: { show: { resource: ['message'], operation: ['search'] } },
+			},
+			{
 				displayName: 'Limit',
 				name: 'searchLimit',
 				type: 'number',
 				description: 'Max number of results to return',
 				default: 50,
 				typeOptions: { minValue: 1 },
-				displayOptions: { show: { resource: ['message'], operation: ['search'] } },
+				displayOptions: {
+					show: { resource: ['message'], operation: ['search'], searchReturnAll: [false] },
+				},
 			},
 
 			// ─── Conversation operations ───────────────────────────────────
@@ -304,20 +314,6 @@ export class AndroidTexter implements INodeType {
 				default: 'list',
 			},
 			{
-				displayName: 'Folder',
-				name: 'view',
-				type: 'options',
-				displayOptions: { show: { resource: ['conversation'], operation: ['list'] } },
-				options: [
-					{ name: 'All', value: 'all', description: 'Everything except archived and spam' },
-					{ name: 'Archived', value: 'archived' },
-					{ name: 'Inbox', value: 'inbox', description: 'Conversations where someone has written back' },
-					{ name: 'Outbox', value: 'outbox', description: 'Sends nobody has answered yet' },
-					{ name: 'Spam', value: 'spam' },
-				],
-				default: 'all',
-			},
-			{
 				displayName: 'Limit',
 				name: 'conversationLimit',
 				type: 'number',
@@ -325,6 +321,29 @@ export class AndroidTexter implements INodeType {
 				default: 50,
 				typeOptions: { minValue: 1, maxValue: 2000 },
 				displayOptions: { show: { resource: ['conversation'], operation: ['list'] } },
+			},
+			{
+				displayName: 'Filters',
+				name: 'conversationFilters',
+				type: 'collection',
+				placeholder: 'Add Filter',
+				default: {},
+				displayOptions: { show: { resource: ['conversation'], operation: ['list'] } },
+				options: [
+					{
+						displayName: 'Folder',
+						name: 'view',
+						type: 'options',
+						options: [
+							{ name: 'All', value: 'all', description: 'Everything except archived and spam' },
+							{ name: 'Archived', value: 'archived' },
+							{ name: 'Inbox', value: 'inbox', description: 'Conversations where someone has written back' },
+							{ name: 'Outbox', value: 'outbox', description: 'Sends nobody has answered yet' },
+							{ name: 'Spam', value: 'spam' },
+						],
+						default: 'all',
+					},
+				],
 			},
 
 			// ─── Scheduled message operations ──────────────────────────────
@@ -425,6 +444,25 @@ export class AndroidTexter implements INodeType {
 				displayOptions: { show: { resource: ['contact'], operation: ['create'] } },
 			},
 			{
+				displayName: 'Return All',
+				name: 'contactReturnAll',
+				type: 'boolean',
+				default: false,
+				description: 'Whether to return all results or only up to a given limit',
+				displayOptions: { show: { resource: ['contact'], operation: ['list'] } },
+			},
+			{
+				displayName: 'Limit',
+				name: 'contactLimit',
+				type: 'number',
+				description: 'Max number of results to return',
+				default: 50,
+				typeOptions: { minValue: 1 },
+				displayOptions: {
+					show: { resource: ['contact'], operation: ['list'], contactReturnAll: [false] },
+				},
+			},
+			{
 				displayName: 'Filters',
 				name: 'contactFilters',
 				type: 'collection',
@@ -513,6 +551,23 @@ export class AndroidTexter implements INodeType {
 			}
 		};
 
+		// Pages through a `page`/`limit` endpoint (which answers with `total`)
+		// until `max` records are pushed or the API runs out. The API caps a
+		// page at 100, so larger limits always need more than one request.
+		const pageAll = async (path: string, qs: IDataObject, key: string, max: number, i: number) => {
+			const pageSize = 100;
+			let fetched = 0;
+			for (let page = 1; fetched < max; page++) {
+				const want = Math.min(pageSize, max - fetched);
+				// Keep the page size fixed so offsets line up; trim the last page instead.
+				const res = await call('GET', path, undefined, { ...qs, page, limit: pageSize });
+				const batch = (Array.isArray(res[key]) ? res[key] : []) as IDataObject[];
+				pushAll(batch.slice(0, want), i);
+				fetched += Math.min(batch.length, want);
+				if (batch.length < pageSize || page * pageSize >= Number(res.total ?? 0)) break;
+			}
+		};
+
 		for (let i = 0; i < items.length; i++) {
 			try {
 				const resource = this.getNodeParameter('resource', i) as string;
@@ -572,13 +627,14 @@ export class AndroidTexter implements INodeType {
 						);
 					} else if (operation === 'search') {
 						const q = this.getNodeParameter('query', i) as string;
-						const limit = this.getNodeParameter('searchLimit', i) as number;
-						const res = await call('GET', '/api/messages/search', undefined, { q, limit });
-						pushAll(res.messages, i);
+						const returnAll = this.getNodeParameter('searchReturnAll', i) as boolean;
+						const limit = returnAll ? Infinity : (this.getNodeParameter('searchLimit', i) as number);
+						await pageAll('/api/messages/search', { q }, 'messages', limit, i);
 						continue;
 					}
 				} else if (resource === 'conversation' && operation === 'list') {
-					const view = this.getNodeParameter('view', i) as string;
+					const filters = this.getNodeParameter('conversationFilters', i, {}) as { view?: string };
+					const view = filters.view || 'all';
 					const limit = this.getNodeParameter('conversationLimit', i) as number;
 					const res = await call('GET', '/api/messages/conversations', undefined, { view, limit });
 					pushAll(res.conversations, i);
@@ -610,11 +666,12 @@ export class AndroidTexter implements INodeType {
 						response = await call('POST', '/api/contacts', body);
 					} else if (operation === 'list') {
 						const f = this.getNodeParameter('contactFilters', i, {}) as { search?: string; tag?: string };
+						const returnAll = this.getNodeParameter('contactReturnAll', i) as boolean;
 						const qs: IDataObject = {};
 						if (f.search) qs.search = f.search;
 						if (f.tag) qs.tag = f.tag;
-						const res = await call('GET', '/api/contacts', undefined, qs);
-						pushAll(res.contacts, i);
+						const limit = returnAll ? Infinity : (this.getNodeParameter('contactLimit', i) as number);
+						await pageAll('/api/contacts', qs, 'contacts', limit, i);
 						continue;
 					}
 				} else if (resource === 'spam') {
