@@ -71,6 +71,7 @@ Every API endpoint is documented at [androidtexter.com/docs](https://androidtext
 
 ## Changelog
 
+- **0.2.2.** No functional changes; republished so the 0.2.1 fixes go through n8n review.
 - **0.2.1.** Contact List and Search can return every result (Return All) instead of stopping at the first page; Conversation List's Folder moved under Filters.
 - **0.2.0.** Send Broadcast, Search, List Conversations, Scheduled Messages, List Contacts, SIM slot and group thread support; usable as an AI Agent tool; meets n8n's current community-node checks. Existing operations are unchanged.
 - **0.1.4.** API errors shown through n8n's error display.

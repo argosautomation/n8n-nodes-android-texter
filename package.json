@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-android-texter",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "n8n community node for Android Texter: send and receive SMS and MMS from your own Android phone and number, plus broadcasts, conversations, scheduled messages, contacts and spam.",
   "keywords": [
     "n8n-community-node-package",
